@@ -12,11 +12,17 @@ SECRET_KEY = hashlib.sha256(BOT_TOKEN.encode()).digest()
 
 def verify_telegram_auth(data: dict) -> bool:
     auth_data = data.copy()
-    hash_to_check = auth_data.pop('hash')
+    hash_to_check = auth_data.pop('hash', None)
+    if not hash_to_check:
+        return False
     data_check_arr = [f"{k}={auth_data[k]}" for k in sorted(auth_data)]
     data_check_string = '\n'.join(data_check_arr)
     hmac_hash = hmac.new(SECRET_KEY, data_check_string.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(hmac_hash, hash_to_check)
+
+@app.route("/")
+def home():
+    return "Welcome to Lamin_confirmbot API"
 
 @app.route("/auth/telegram", methods=["POST"])
 def telegram_auth():
@@ -33,4 +39,4 @@ def send_telegram_message(chat_id, text):
     return requests.post(url, data={"chat_id": chat_id, "text": text})
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
