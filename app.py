@@ -11,6 +11,9 @@ BOT_USERNAME = "Lamin_confirmbot"
 SECRET_KEY = hashlib.sha256(BOT_TOKEN.encode()).digest()
 
 def verify_telegram_auth(data: dict) -> bool:
+    """
+    Verify Telegram login data signature with HMAC SHA-256
+    """
     auth_data = data.copy()
     hash_to_check = auth_data.pop('hash', None)
     if not hash_to_check:
@@ -37,6 +40,20 @@ def telegram_auth():
 def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     return requests.post(url, data={"chat_id": chat_id, "text": text})
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    update = request.get_json()
+    if not update:
+        return jsonify({"status": "no update received"}), 400
+
+    if "message" in update:
+        message = update["message"]
+        chat_id = message["chat"]["id"]
+        text = message.get("text", "")
+        send_telegram_message(chat_id, f"You said: {text}")
+
+    return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
